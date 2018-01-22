@@ -1,0 +1,98 @@
+# Extraction des donnees
+
+dataset_url <- "https://d396qusza40orc.cloudfront.net/rprog%2Fdata%2Fspecdata.zip"
+download.file(dataset_url, "rprog%2Fdata%2Fspecdata.zip")
+unzip("rprog%2Fdata%2Fspecdata.zip", exdir = "specdata")
+names <- list.files("specdata/specdata")
+
+# Fonction pour le calcul des moyennes
+
+pollutantmean <- function(directory, pollutant, id = 1:332){
+       names <- list.files(directory)[id]
+       read <- lapply(paste(directory,"/",names, sep = ""),read.csv)     
+       return(mean(unlist(lapply(read, function(x){x[,pollutant]})), na.rm=T))
+       
+}
+
+pollutantmean("specdata/specdata", "sulfate", 1:10)
+pollutantmean("specdata/specdata", "nitrate", 70:72)
+pollutantmean("specdata/specdata", "sulfate", 34)
+pollutantmean("specdata/specdata", "nitrate")
+
+#***************************************************************************************
+# Extraction des donnees
+
+dataset_url <- "https://d396qusza40orc.cloudfront.net/rprog%2Fdata%2Fspecdata.zip"
+download.file(dataset_url, "rprog%2Fdata%2Fspecdata.zip")
+unzip("rprog%2Fdata%2Fspecdata.zip", exdir = "specdata")
+names <- list.files("specdata/specdata", full.names = TRUE)
+
+# Fonction pour "complete"
+complete <- function(directory, id = 1:332){
+	dataframe = NULL
+	names <- list.files(directory, full.names = TRUE)
+	for (i in id) {
+		read <- read.csv(names[i])    
+		read <- as.matrix(na.omit(read)) 
+		dataframe = rbind(dataframe, c(i,nrow(read)))
+                      }
+  
+	dataframe = data.frame(dataframe)
+	names(dataframe) = c('id', 'nobs') 
+	return (dataframe) 
+}
+
+complete("specdata/specdata", c(6, 10, 20, 34, 100, 200, 310))
+complete("specdata/specdata", 54)
+
+set.seed(42)
+
+cc <- complete("specdata/specdata", 332:1)
+
+use <- sample(332, 10)
+
+print(cc[use, "nobs"])
+
+complete("specdata/specdata", 1) 
+complete("specdata/specdata", c(2, 4, 8, 10, 12))
+complete("specdata/specdata", 30:25) 
+#***************************************************************************************
+# Fonction pour la correlation
+
+corr <- function(directory, threshold = 0) {
+	all <- complete(directory)
+        if (sum(which(all$nobs>threshold))==0){
+              
+              NULL
+       }
+       
+       else {
+       thresh_index <- as.numeric(all[which(all$nobs>threshold),]$id)
+       
+       names <- list.files(directory)[thresh_index]
+       read <- lapply(paste(directory,"/",names, sep = ""),read.csv)
+             
+       return(unlist(lapply(read, function(x){cor(x[,2],x[,3],use="pairwise.complete.obs")})))
+       }
+}
+
+
+cr <- corr("specdata/specdata")                
+cr <- sort(cr)                
+set.seed(868)                
+out <- round(cr[sample(length(cr), 5)], 4)
+print(out)
+
+cr <- corr("specdata/specdata", 129)                
+cr <- sort(cr)                
+n <- length(cr)                
+set.seed(197)                
+out <- c(n, round(cr[sample(n, 5)], 4))
+print(out)
+
+cr <- corr("specdata/specdata", 2000)                
+n <- length(cr)                
+cr <- corr("specdata/specdata", 1000)                
+cr <- sort(cr)
+print(c(n, round(cr, 4)))
+
